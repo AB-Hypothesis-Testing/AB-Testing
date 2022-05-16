@@ -9,4 +9,10 @@ The main **objective** of this project is to test if the ads that the advertisin
 
 ## Why this (Hypothesis testing) project?
 Hypothesis testing is the cornerstone of evidence based decision making. The A/B testing framework is the most used statistical framework for making gradual but important changes in every aspect of today’s business.
+## Data
+The BIO data for this project is a “Yes” and “No” response of online users to the following question
+
+Q: Do you know the brand Lux?
+	- O  Yes
+	- O  No
 
