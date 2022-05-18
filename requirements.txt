@@ -1,3 +1,4 @@
 pandas
 mlflow
 numpy
+python >3.6
