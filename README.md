@@ -12,7 +12,16 @@ Hypothesis testing is the cornerstone of evidence based decision making. The A/B
 ## Data
 The BIO data for this project is a “Yes” and “No” response of online users to the following question
 
-Q: Do you know the brand Lux?
-	- O  Yes
-	- O  No
+**Q**: Do you know the brand Lux?
+	-  Yes
+	-  No
 
+The following picture shows the ML-pipline used for this AB-Test project.
+-
+![AB Test Pipline](“/image/AB_Test_Pipline.png”)
+
+**Team Members**
+- Gezahegne Wondachew
+- Ammon Leulseged
+- Hikma Brihan
+- Daisy Okacha
