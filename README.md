@@ -15,7 +15,7 @@ The BIO data for this project is a “Yes” and “No” response of online use
 **Q**: Do you know the brand Lux?
 -  Yes
 -  No
-The following picture shows the ML-pipline used for this AB-Test project.
+- ***The following picture shows the ML-pipline used for this AB-Test project.***
 
 ![AB_Test_Pipline](https://user-images.githubusercontent.com/99503155/169228005-027e219d-b8c8-4c11-aa67-7d1256b4732e.png)
 
