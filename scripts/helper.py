@@ -1,26 +1,26 @@
-import numpy as np
+import os
+import sys
 import pandas as pd
+from ap_log import App_Logger
 
-class MyHelper:
-  
-  def __init__(self):
-    pass
-  
-  def read_csv(self, csv_path):
-    try:
-        df = pd.read_csv(csv_path)
-        print(">> file read as csv")
-        return df
-    except FileNotFoundError:
-        print(">> file not found")
-  
-  
-  def save_csv(self, df, csv_path):
-    try:
-        df.to_csv(csv_path, index=False)
-        print('>> File Successfully Saved.!!!')
+class CsvHelper():
 
-    except Exception:
-        print(">> Save failed...")
+    def __init__(self):
+        self.logger = App_Logger().get_app_logger()
 
-    return df
+    def save_csv(self, df, csv_path, index=False):
+        try:
+            df.to_csv(csv_path, index=index)
+            self.logger.info(f'Csv file saved in {csv_path}')
+
+        except Exception:
+            self.logger.exception('File saving failed.')
+
+    def read_csv(self, csv_path, missing_values=[]):
+        try:
+            df = pd.read_csv(csv_path, na_values=missing_values)
+            self.logger.info(f'Csv file read from {csv_path}')
+            return df
+
+        except FileNotFoundError:
+            self.logger.exception('File not found.')
