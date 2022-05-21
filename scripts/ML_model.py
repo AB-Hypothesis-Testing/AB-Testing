@@ -1,82 +1,86 @@
-# -*- coding: utf-8 -*-
-import pandas as pd
-from scipy.stats.stats import mode
-#from scripts.ml_modelling_utils import evaluate_model, plot_roc_curve_log, plot_precision_recall_curve
+import math
+from conf import Config
+from helper import CsvHelper
+from sklearn.model_selection import KFold
+from sklearn.metrics import accuracy_score
+from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
+import mlflow
+import mlflow.sklearn
+from mlflow.models.signature import infer_signature
 
-"""
-"""
+Config.MODELS_PATH.mkdir(parents=True, exist_ok=True)
+helper = CsvHelper()
 
-def get_lr_model_score(model, x_train, y_train):
-    return model.score(x_train, y_train)
+def eval_metrics(actual, pred):
+  rmse = math.sqrt(mean_squared_error(actual, pred))
+  mae = mean_absolute_error(actual, pred)
+  r2 = r2_score(actual, pred)
+  return rmse, mae, r2
 
-
-def get_lr_params(model):
-    return model.get_params()
-
-
-def get_lr_features(model, x_train) -> pd.DataFrame:
-    dataframe = pd.DataFrame()
-    dataframe['Feature'] = x_train.columns
-    dataframe['Score'] = model.coef_[0]
-    dataframe.sort_values(by='Score', ascending=False, inplace=True)
-
-    return dataframe
+X_train = helper.read_csv(str(Config.FEATURES_PATH / "train_features.csv"))
+y_train = helper.read_csv(str(Config.FEATURES_PATH / "train_labels.csv"))
 
 
-def get_lr_model_evaluation(model, x_valid, y_valid, x_test, y_test, show=False):
-    return evaluate_model(model, x_valid, y_valid, x_test, y_test, show)
+def train_model(_model, model_name):
+    mlflow.set_experiment(model_name)
 
+    kf = KFold(n_splits=5)
+    solvers = ['newton-cg', 'lbfgs', 'liblinear', 'sag', 'saga']
+    avg_score = 0
+    avg_rmse = 0
+    avg_mae = 0
+    avg_r2 = 0
+    best_model = None
+    best_solver = solvers[0]
 
-def get_lr_model_roc_curve_log(model, x_test, y_test, show=False):
-    return plot_roc_curve_log(x_test, y_test, model, "Logistic Regression", show)
+    if(model_name == 'XGBoost'):
+        mlflow.xgboost.autolog()
+    else:
+        mlflow.sklearn.autolog()
+    mlflow.log_param('Model', model_name)
+    mlflow.log_param('Solvers', solvers)
 
+    for solver in solvers:
+        score_list = []
+        rmse_list = []
+        mae_list = []
+        r2_list = []
+        model = _model(solver)
+        randomIter = kf.split(X_train)
+        for i in range(5):
+            train_index, val_index = next(randomIter)
+            _X_train = X_train.iloc[train_index]
+            _y_train = y_train.iloc[train_index]
 
-def get_lr_model_precision_recall_curve(model, x_test, y_test, show=False):
-    return plot_precision_recall_curve(x_test, y_test, model, "Logistic Regression", show)
+            _X_val = X_train.iloc[val_index]
+            _y_val = y_train.iloc[val_index]
 
+            model.fit(_X_train, _y_train.to_numpy().ravel())
+            y_pred = model.predict(_X_val)
+            _score = accuracy_score(_y_val, y_pred)
+            _rmse, _mae, _r2 = eval_metrics(_y_val, y_pred)
+            score_list.append(_score)
+            rmse_list.append(_rmse)
+            mae_list.append(_mae)
+            r2_list.append(_r2)
 
-def get_model_evaluation(model_holder, x_valid, y_valid, x_test, y_test, show=False):
-    model = get_model_best_estimator(model_holder)
-    return evaluate_model(model, x_valid, y_valid, x_test, y_test, show)
+        avg_score_for_solver = sum(score_list) / len(score_list)
+        if(avg_score_for_solver > avg_score):
+            avg_score = avg_score_for_solver
+            avg_rmse = sum(rmse_list) / len(rmse_list)
+            avg_mae = sum(mae_list) / len(mae_list)
+            avg_r2 = sum(r2_list) / len(r2_list)
+            best_model = model
+            best_solver = solver
 
+    mlflow.log_param('Best Solver', best_solver)
 
-def get_features(model_holder, x_train) -> pd.DataFrame:
-    dataframe = pd.DataFrame()
-    dataframe['Feature'] = x_train.columns
-    dataframe['Score'] = model_holder.best_estimator_.feature_importances_[0]
-    dataframe.sort_values(by='Score', ascending=False, inplace=True)
+    if(model_name == 'XGBoost'):
+        mlflow.log_metric("Average Score", avg_score)
+        mlflow.log_metric("RMSE", avg_rmse)
+        mlflow.log_metric("MAE", avg_mae)
+        mlflow.log_metric("R2", avg_r2)
+        signature = infer_signature(X_train, model.predict(X_train))
+        mlflow.xgboost.log_model(model, model_name, signature=signature)
 
-    return dataframe
-
-
-def get_model_best_estimator(model_holder):
-    return model_holder.best_estimator_
-
-
-def get_model_best_score(model_holder):
-    return model_holder.best_score_
-
-
-def get_score_df(model_holder, top: int = 5, by: str = 'mean_test_score'):
-    score_df = pd.DataFrame(model_holder.cv_results_)
-    score_df = score_df.nlargest(top, by)
-
-    return score_df
-
-
-def get_best_model_parameters(model_holder):
-    return model_holder.best_params_
-
-
-def get_model_roc_curve_log(model_holder, x_test, y_test, label, show=False):
-    model = get_model_best_estimator(model_holder)
-    return plot_roc_curve_log(x_test, y_test, model, label, show)
-
-
-def get_model_precision_recall_curve(model_holder, x_test, y_test, label, show=False):
-    model = get_model_best_estimator(model_holder)
-    return plot_precision_recall_curve(x_test, y_test, model, label, show)
-
-
-if __name__ == '__main__':
-    print("Works")
+    return best_model
