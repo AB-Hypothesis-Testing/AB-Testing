@@ -1,4 +1,6 @@
 import math
+
+from xgboost import XGBClassifier
 from conf import Config
 from helper import CsvHelper
 from sklearn.model_selection import KFold
@@ -84,3 +86,13 @@ def train_model(_model, model_name):
         mlflow.xgboost.log_model(model, model_name, signature=signature)
 
     return best_model
+
+    if __name__ == "__main__":
+        final_model = train_model(model, "XGBoost")
+        print('Hello World!')
+        pickle.dump(final_model, open(str(Config.MODELS_PATH / "xgboost_model.pickle"), "wb"))
+        
+        
+
+
+    
