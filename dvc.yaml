@@ -1,0 +1,16 @@
+stages:
+  prepared:
+    cmd: scripts/eda.py -d data/file.csv -o data/prepared python scripts/eda.py data/file.csv
+  classical_testing:
+    cmd: scripts/classical.py -d data/eda.csv python scripts/classical.py
+  sequential_testing:
+    cmd: scripts/sequential.py -d data/eda.csv python scripts/sequential.py
+  train:
+    cmd: scripts/train.py -d data/eda.csv -o data/train.csv python scripts/train.py
+      data/eda.csv
+  validator:
+    cmd: scripts/validator.py -d data/train.csv -o data/validation.csv python scripts/validator.py
+      data/train.csv
+  evaluator:
+    cmd: scripts/evaluate.py -d data/results.csv -o data/results.csv python scripts/validator.py
+      data/validation.csv
